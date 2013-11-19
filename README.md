@@ -30,7 +30,7 @@ The following methods are available on an instance of WebMP.
 
 forEach will bucket the list items into n lists, where n is the total workers in the webMP pool. This is transparent to the user and the return values will be properly concatonated in the callback. 
 
-The `parallelFunction` will be passed a single argument (`webMP`) which will contain the functions context and communication methods.
+The `parallelFunction` will be passed a single argument (`webMP`) which will contain the function's context and communication methods.
 
 ```
 function (webMP) {
