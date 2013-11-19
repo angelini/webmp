@@ -1,10 +1,11 @@
-var webMP1 = new WebMP('webmp_worker.js', 2);
+var webMP1 = new WebMP('webmp_worker.js', 2, 'parallel');
 
 webMP1.parallel(
   {a: 'b'},
 
   function(webMP) {
-    webMP.callback(webMP.a + " " + webMP.getWorkerID());
+    webMP.log('worker: ' + webMP.getWorkerID());
+    webMP.callback(webMP.a);
   },
 
   function(responses) {
@@ -13,10 +14,13 @@ webMP1.parallel(
 );
 
 var a = [1, 2, 3, 4, 5, 6];
-var webMP2 = new WebMP('webmp_worker.js', 2);
+var webMP2 = new WebMP('webmp_worker.js', 2, 'forEach');
 
-webMP2.forEach(a,
+webMP2.forEach(
+  a,
+
   function(webMP) {
+    webMP.log('elem: ' + webMP.elem);
     webMP.callback(webMP.elem + 1);
   },
 
