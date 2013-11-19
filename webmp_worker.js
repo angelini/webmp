@@ -31,6 +31,8 @@ self.addEventListener('message', function(event) {
       self.id    = event.data.content.id;
       self.name  = event.data.content.name;
       self.count = event.data.content.count;
+
+      importScripts(event.data.content.libURL);
       break;
 
     case 'script':

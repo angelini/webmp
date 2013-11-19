@@ -1,4 +1,4 @@
-var webMP1 = new WebMP('webmp_worker.js', 2, 'parallel');
+var webMP1 = new WebMP(2, {name: 'parallel'});
 
 webMP1.parallel(
   {a: 'b'},
@@ -14,7 +14,7 @@ webMP1.parallel(
 );
 
 var a = [1, 2, 3, 4, 5, 6];
-var webMP2 = new WebMP('webmp_worker.js', 2, 'forEach');
+var webMP2 = new WebMP(2, {name: 'forEach'});
 
 webMP2.forEach(
   a,
@@ -26,5 +26,22 @@ webMP2.forEach(
 
   function(responses) {
     console.log('forEach', responses);
+  }
+);
+
+var webMP3 = new WebMP(2, {name: 'outer_nested'});
+
+webMP3.parallel(
+  function(webMP) {
+    var nested = new WebMP(2, {name: 'inner_nested'});
+
+    nested.parallel(
+      function(webMP)     { webMP.callback(1); },
+      function(responses) { webMP.callback(responses); }
+    );
+  },
+
+  function(responses) {
+    console.log('nested', responses);
   }
 );

@@ -1,4 +1,4 @@
-(function() {
+(function(global) {
 
   var fnRegex = new RegExp('^function.*?{([\\s\\S]*)}$');
 
@@ -13,21 +13,25 @@
     });
   };
 
-  var runFunction = function(worker, context, fn, handler) {
-    sendMessage(worker, 'script', fn);
-
-    worker.addEventListener('message', function(event) {
+  var runFunction = function(worker, context, fn, responseHandler) {
+    var eventHandler = function(event) {
       switch (event.data.type) {
         case 'response':
-          handler(event.data.content);
+          responseHandler(event.data.content, stop);
           break;
 
         case 'log':
           console.log(event.data.content);
           break;
       }
-    });
+    };
 
+    var stop = function() {
+      worker.removeEventListener('message', eventHandler);
+    };
+
+    sendMessage(worker, 'script', fn);
+    worker.addEventListener('message', eventHandler);
     sendMessage(worker, 'eval', context);
   };
 
@@ -42,19 +46,22 @@
     return splits;
   };
 
-  var WebMP = function(url, count, name) {
-    this.url   = url;
+  var WebMP = function(count, options) {
     this.count = count;
-    this.name  = name;
     this.pool  = [];
 
+    this.name      = options.name;
+    this.libURL    = options.libURL || 'webmp.js';
+    this.workerURL = options.workerURL || 'webmp_worker.js';
+
     for (i = 0; i < count; i++) {
-      this.pool[i] = new Worker(url);
+      this.pool[i] = new Worker(this.workerURL);
 
       sendMessage(this.pool[i], 'init', {
-        id:    i,
-        name:  name,
-        count: count
+        id:     i,
+        name:   this.name,
+        count:  this.count,
+        libURL: this.libURL
       });
     }
   };
@@ -74,7 +81,6 @@
                   '});'
                  ].join('\n');
 
-
     var splits    = splitList(list, this.count);
     var returned  = 0;
     var responses = [];
@@ -84,12 +90,12 @@
       var iterResponses = [];
 
       context._list = splits[id];
-      runFunction(worker, context, iterFn, function(response) {
+      runFunction(worker, context, iterFn, function(response, stop) {
         iterReturned--;
         iterResponses.push(response);
 
         if (iterReturned === 0) {
-          worker.removeEventListener('message');
+          stop();
 
           returned++;
           responses[id] = iterResponses;
@@ -112,8 +118,8 @@
     var responses = [];
 
     this.pool.forEach(function(worker, id) {
-      runFunction(worker, context, extractFunction(fn), function(response) {
-        worker.removeEventListener('message');
+      runFunction(worker, context, extractFunction(fn), function(response, stop) {
+        stop();
 
         returned++;
         responses[id] = response;
@@ -123,6 +129,6 @@
     });
   };
 
-  window.WebMP = WebMP;
+  global.WebMP = WebMP;
 
-})();
+})(this);
